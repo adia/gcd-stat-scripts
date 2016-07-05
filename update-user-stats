@@ -1,0 +1,20 @@
+#!/bin/bash
+source settings.sh
+FILE=/var/www/html/adia/user-stats.html
+
+python user-stats.py >> user-stats.part
+cat - user-stats.part >$FILE <<END
+<!DOCTYPE html>
+<html>
+<head>
+ <meta charset='UTF-8'>
+ <title>GCD User Statistics</title>
+ <link rel='stylesheet' href='style.css' type='text/css'>
+<body>
+ <h1>GCD User Statistics</h1>
+END
+
+cat >>$FILE <<END
+</body>
+</html>
+END
