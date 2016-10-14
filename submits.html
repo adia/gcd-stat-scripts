@@ -109,15 +109,16 @@
                     x = item.datapoint[0],
                     y = item.datapoint[1].toFixed(0),
                     minDays = step * Math.floor(x / step),
-                    maxDays = minDays + step - 1;
+                    maxDays = minDays + step - 1,
+                    minY = $("#placeholder").offset().top.toFixed(0);
                 if (maxDays > step * max) {
                     tooltip = 'more than ' + minDays;
                 } else {
                     tooltip = 'between ' + minDays + ' and ' + maxDays;
                 }
                 $("#tooltip").html(y + ' changes taking ' + tooltip + ' days')
-		            .css({top: item.pageY+5, left: item.pageX+5})
-		            .fadeIn(200);
+		            .css({top: Math.max(item.pageY+5, minY), left: item.pageX+5})
+		            .fadeIn(100);
             } else {
 		        $("#tooltip").hide();
 		    }
