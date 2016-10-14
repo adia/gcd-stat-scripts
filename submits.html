@@ -1,0 +1,190 @@
+<!DOCTYPE HTML>
+<html class=gradient>
+<head>
+  <title>Issue changeset submit / discard chart</title>
+  <meta charset='utf-8'>
+  <link rel='stylesheet' href='style.css' type='text/css'>
+  <!--[if lte IE 8]><script src="flot/excanvas.min.js"></script><![endif]-->
+  <script src="flot/jquery.min.js"></script>
+  <script src="flot/jquery.flot.min.js"></script>
+  <script src="flot/jquery.flot.time.min.js"></script>
+  <script src="submits-data.jsz"></script>
+  <script>
+    var step = 7, max = 30;
+    var plotData = new Array();
+    function range(n) {
+        var a = Array(n--);
+        for (; n >= 0; n--) {
+            a[n] = n;
+        }
+        return a;
+    }
+    function updateData() {
+        var year = $('#yearField').val(),
+            month = $('#monthField').val(),
+            type = $('#typeField').val(),
+            years, months, submitted, auto;
+        if (+year) {
+            years = [year - 2010];
+        } else {
+            years = range(2017 - 2010);
+        }
+        if (+month) {
+            months = [month - 1];
+        } else {
+            months = range(12);
+        }
+        if (type == 'submit' || type == 'autosubmit') {
+            submitted = [1];
+        } else if (type == 'discard' || type == 'autodiscard') {
+            submitted = [0];
+        } else {
+            submitted = [0, 1];
+        }
+        if (type == 'autosubmit' || type == 'autodiscard') {
+            auto = [1];
+        } else {
+            auto = [0, 1];
+        }
+        for (var i = 0; i <= max; i++) {
+            var v = 0;
+            years.forEach(function (year) {
+                months.forEach(function (month) {
+                    submitted.forEach(function (wasSub) {
+                        auto.forEach(function (isAuto) {
+                            v += data[year][month][wasSub][isAuto][i];
+                        });
+                    });
+                });
+            });
+            plotData[i] = [i * step, v];
+        }
+        updatePlot();
+    }
+    function updatePlot() {
+        var yaxis = { min: 0 };
+        if ($('#yaxisField').val() == 'log') {
+            yaxis.ticks = [ 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000, 100000, 200000, 500000 ];
+            yaxis.transform = function(v) { return v === 0? null: Math.log(v); };
+        }
+        var ymax = +$('#ymaxField').val();
+        if (ymax) {
+            yaxis.max = ymax;
+        }
+        $("#placeholder").plot([{
+                data: plotData,
+                label: 'Changesets'
+            }], {
+            xaxis: {
+                tickSize: step,
+                tickFormatter: function (val, axis) {
+                    var n = (val / step).toFixed(0);
+                    if (n == max) {
+                        n = '\u2265' + n;
+                    }
+                    return n + 'w';
+                }
+            },
+            yaxis: yaxis,
+            grid: { hoverable: true },
+            series: {
+                bars: { show: true }
+            },
+            bars: {
+                align: 'center',
+                barWidth: step * 0.8 
+            }
+        });
+    }
+    $(function () {
+        $("<div id='tooltip'></div>").appendTo("body");
+        $('#yearField, #monthField, #typeField').on('change', updateData);
+        $('#yaxisField, #ymaxField').on('change', updatePlot);
+
+        updateData();
+
+        $("#placeholder").bind("plothover", function (event, pos, item) {
+		    if (item) {
+		        var tooltip,
+                    x = item.datapoint[0],
+                    y = item.datapoint[1].toFixed(0),
+                    minDays = step * Math.floor(x / step),
+                    maxDays = minDays + step - 1;
+                if (maxDays > step * max) {
+                    tooltip = 'more than ' + minDays;
+                } else {
+                    tooltip = 'between ' + minDays + ' and ' + maxDays;
+                }
+                $("#tooltip").html(y + ' changes taking ' + tooltip + ' days')
+		            .css({top: item.pageY+5, left: item.pageX+5})
+		            .fadeIn(200);
+            } else {
+		        $("#tooltip").hide();
+		    }
+		});
+    });
+  </script>
+</head>
+<body>
+  <h1>Issue changeset submit / discard chart</h1>
+  <div class="chart-container">
+    <div id="placeholder" class="chart-placeholder"></div>
+  </div>
+  <p>Updated: 13 Oct 2016</p>
+  <form>
+      <div class='field'>Year:
+          <select name='year' id='yearField'>
+              <option value='0'>all</option>
+              <option value='2010'>2010</option>
+              <option value='2011'>2011</option>
+              <option value='2012'>2012</option>
+              <option value='2013'>2013</option>
+              <option value='2014'>2014</option>
+              <option value='2015'>2015</option>
+              <option value='2016'>2016</option>
+          </select>
+      </div>
+      <div class='field'>Month:
+          <select name='month' id='monthField'>
+              <option value='0'>all</option>
+              <option value='1'>January</option>
+              <option value='2'>February</option>
+              <option value='3'>March</option>
+              <option value='4'>April</option>
+              <option value='5'>May</option>
+              <option value='6'>June</option>
+              <option value='8'>July</option>
+              <option value='8'>August</option>
+              <option value='9'>September</option>
+              <option value='10'>October</option>
+              <option value='11'>November</option>
+              <option value='12'>December</option>
+          </select>
+      </div>
+      <div class='field'>Type:
+          <select name='type' id='typeField'>
+              <option value='all'>all</option>
+              <option value='submit'>submit</option>
+              <option value='discard'>discard</option>
+              <option value='autosubmit'>autosubmit</option>
+              <option value='autodiscard'>autodiscard</option>
+          </select>
+      </div>
+      <div class='field'>Y axis:
+          <select name='yaxis' id='yaxisField'>
+              <option value='lin'>Linear</option>
+              <option value='log'>Logarithmic</option>
+          </select>
+      </div>
+      <div class='field'>Y axis max:
+          <select name='ymax' id='ymaxField'>
+              <option value='0'>Unlimited</option>
+              <option value='100'>100</option>
+              <option value='1000'>1000</option>
+              <option value='3000'>3000</option>
+          </select>
+      </div>
+  </form>
+</body>
+</html>
+

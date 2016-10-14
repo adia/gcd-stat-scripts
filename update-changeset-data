@@ -1,0 +1,5 @@
+#!/bin/bash
+source settings.sh
+FILE=/var/www/html/adia/submits-data.jsz
+
+python changesets-aggregate.py | gzip -9 > $FILE
